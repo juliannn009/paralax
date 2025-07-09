@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Efecto de Scroll con 124 Imágenes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #000;
+            color: white;
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        .scroll-container {
+            height: 800vh; /* Altura muy alta para scroll suave con 124 imágenes */
+            position: relative;
+        }
+
+        .hero-section {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .content-wrapper {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .text-content {
+            flex: 1;
+            padding-right: 3rem;
+            z-index: 2;
+        }
+
+        .text-content h1 {
+            font-size: 3.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .text-content p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            line-height: 1.6;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .cta-button {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .image-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0;
+            overflow: hidden;
+            box-shadow: none;
+        }
+
+        .scroll-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 0.1s ease;
+            will-change: opacity;
+            margin: 0;
+            padding: 0;
+            border: none;
+        }
+
+        .scroll-image.active {
+            opacity: 1;
+        }
+
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ff6b6b, #feca57);
+            z-index: 1000;
+            transition: width 0.1s ease;
+        }
+
+        .scroll-indicator {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 1rem 1.5rem;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            z-index: 1000;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-width: 200px;
+        }
+
+        .fps-counter {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            z-index: 1000;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            flex-direction: column;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid #ff6b6b;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        .loading-progress {
+            width: 300px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            margin-top: 1rem;
+            overflow: hidden;
+        }
+
+        .loading-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #feca57);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .content-wrapper {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .text-content {
+                padding-right: 0;
+                margin-bottom: 2rem;
+            }
+
+            .text-content h1 {
+                font-size: 2.5rem;
+            }
+
+            .image-container {
+                height: 50vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Cargando imágenes...</div>
+        <div class="loading-progress">
+            <div class="loading-progress-bar" id="loadingProgressBar"></div>
+        </div>
+        <div id="loadingCount">0 / 124</div>
+    </div>
+
+    <div class="progress-bar" id="progressBar"></div>
+    <div class="fps-counter" id="fpsCounter">FPS: 60</div>
+    
+    <div class="scroll-container">
+        <div class="hero-section">
+            <div class="content-wrapper">
+                <canvas id="sequence-canvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="scroll-indicator" id="scrollIndicator">
+        Scroll: 0% | Imagen: 1/124
+    </div>
+
+    <script>
+        // Lista generada automáticamente con los archivos realmente presentes en la carpeta
+        const imageFiles = [
+            "scrub000.jpg", "scrub000.jpg.webp", "scrub001.jpg.webp", "scrub002.jpg.webp", "scrub003.jpg.webp", "scrub004.jpg.webp", "scrub005.jpg.webp", "scrub006.jpg.webp", "scrub007.jpg.webp", "scrub014.jpg.webp", "scrub015.jpg.webp", "scrub016.jpg.webp", "scrub017.jpg.webp", "scrub018.jpg.webp", "scrub019.jpg.webp", "scrub020.jpg.webp", "scrub021.jpg.webp", "scrub022.jpg.webp", "scrub029.jpg.webp", "scrub030.jpg.webp", "scrub031.jpg.webp", "scrub032.jpg.webp", "scrub033.jpg.webp", "scrub034.jpg.webp", "scrub035.jpg.webp", "scrub036.jpg.webp", "scrub037.jpg.webp", "scrub044.jpg.webp", "scrub045.jpg.webp", "scrub046.jpg.webp", "scrub047.jpg.webp", "scrub048.jpg.webp", "scrub049.jpg.webp", "scrub050.jpg.webp", "scrub051.jpg.webp", "scrub052.jpg.webp", "scrub059.jpg.webp", "scrub060.jpg.webp", "scrub061.jpg.webp", "scrub062.jpg.webp", "scrub063.jpg.webp", "scrub064.jpg.webp", "scrub065.jpg.webp", "scrub066.jpg.webp", "scrub067.jpg.webp", "scrub074.jpg.webp", "scrub075.jpg.webp", "scrub076.jpg.webp", "scrub077.jpg.webp", "scrub078.jpg.webp", "scrub079.jpg.webp", "scrub080.jpg.webp", "scrub081.jpg.webp", "scrub082.jpg.webp", "scrub089.jpg.webp", "scrub090.jpg.webp", "scrub091.jpg.webp", "scrub092.jpg.webp", "scrub093.jpg.webp", "scrub094.jpg.webp", "scrub095.jpg.webp", "scrub096.jpg.webp", "scrub097.jpg.webp", "scrub104.jpg.webp", "scrub105.jpg.webp", "scrub106.jpg.webp", "scrub107.jpg.webp", "scrub108.jpg.webp", "scrub109.jpg.webp", "scrub110.jpg.webp", "scrub111.jpg.webp", "scrub112.jpg.webp", "scrub119.jpg.webp", "scrub120.jpg.webp", "scrub121.jpg.webp", "scrub122.jpg.webp", "scrub123.jpg.webp", "scrub124.jpg.webp"
+        ];
+        const totalImages = imageFiles.length;
+        const images = [];
+        let loadedImages = 0;
+        let isLoading = true;
+        const basePath = 'imagenes/sequence/';
+        const canvas = document.getElementById('sequence-canvas');
+        const ctx = canvas.getContext('2d');
+        const progressBar = document.getElementById('progressBar');
+        const scrollIndicator = document.getElementById('scrollIndicator');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingProgressBar = document.getElementById('loadingProgressBar');
+        const loadingCount = document.getElementById('loadingCount');
+        const fpsCounter = document.getElementById('fpsCounter');
+
+        // Preload only existing images
+        imageFiles.forEach((file, i) => {
+            const img = new Image();
+            img.src = basePath + file;
+            img.onload = () => {
+                loadedImages++;
+                loadingProgressBar.style.width = `${(loadedImages / totalImages) * 100}%`;
+                loadingCount.textContent = `${loadedImages} / ${totalImages}`;
+                if (loadedImages === totalImages) finishLoading();
+            };
+            img.onerror = () => {
+                loadedImages++;
+                loadingProgressBar.style.width = `${(loadedImages / totalImages) * 100}%`;
+                loadingCount.textContent = `${loadedImages} / ${totalImages}`;
+                if (loadedImages === totalImages) finishLoading();
+            };
+            images.push(img);
+        });
+
+        function finishLoading() {
+            isLoading = false;
+            setTimeout(() => {
+                loadingOverlay.style.opacity = '0';
+                setTimeout(() => {
+                    loadingOverlay.style.display = 'none';
+                }, 500);
+            }, 1000);
+            resizeCanvas();
+            drawFrame(0);
+            setupScrollEffect();
+        }
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            drawFrame(currentFrame);
+        });
+
+        let currentFrame = 0;
+        function drawFrame(index) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const img = images[index];
+            if (!img || !img.complete) return;
+            // Cover logic
+            const scale = Math.max(
+                canvas.width / img.width,
+                canvas.height / img.height
+            );
+            const x = (canvas.width / 2) - (img.width / 2) * scale;
+            const y = (canvas.height / 2) - (img.height / 2) * scale;
+            ctx.drawImage(
+                img,
+                0, 0, img.width, img.height,
+                x, y, img.width * scale, img.height * scale
+            );
+        }
+
+        function setupScrollEffect() {
+            let ticking = false;
+            const handleScroll = () => {
+                if (!ticking) {
+                    requestAnimationFrame(() => {
+                        updateImageSequence();
+                        ticking = false;
+                    });
+                    ticking = true;
+                }
+            };
+            window.addEventListener('scroll', handleScroll);
+            window.addEventListener('resize', handleScroll);
+            updateImageSequence();
+        }
+
+        function updateImageSequence() {
+            if (isLoading) return;
+            const scrollTop = window.pageYOffset;
+            const documentHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const scrollProgress = Math.min(Math.max(scrollTop / documentHeight, 0), 1);
+            if (progressBar) progressBar.style.width = `${scrollProgress * 100}%`;
+            const frameIndex = Math.floor(scrollProgress * (totalImages - 1));
+            currentFrame = Math.min(frameIndex, totalImages - 1);
+            drawFrame(currentFrame);
+            if (scrollIndicator) {
+                scrollIndicator.innerHTML = `Scroll: ${Math.round(scrollProgress * 100)}% | Imagen: ${currentFrame + 1}/${totalImages}`;
+            }
+        }
+
+        // FPS monitoring opcional
+        let lastFrameTime = performance.now();
+        let frameCount = 0;
+        let fps = 60;
+        function updateFPS() {
+            const now = performance.now();
+            const delta = now - lastFrameTime;
+            frameCount++;
+            if (delta >= 1000) {
+                fps = Math.round((frameCount * 1000) / delta);
+                if (fpsCounter) fpsCounter.textContent = `FPS: ${fps}`;
+                frameCount = 0;
+                lastFrameTime = now;
+            }
+            requestAnimationFrame(updateFPS);
+        }
+        updateFPS();
+
+        // Optimizaciones adicionales
+        document.documentElement.style.scrollBehavior = 'smooth';
+        
+        // Prevenir que las imágenes se arrastren
+        document.addEventListener('dragstart', (e) => {
+            if (e.target.tagName === 'IMG') {
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>
